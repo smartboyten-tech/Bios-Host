@@ -3,14 +3,20 @@ const fs      = require("fs");
 const path    = require("path");
 
 const app  = express();
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 const HWID_FILE = path.join(__dirname, "hwids.json");
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// ── Serve HTML ────────────────────────────────────────────────────────────────
-app.use(express.static(__dirname));
+// ✅ CORS — Netlify থেকে request allow করো
+app.use((req, res, next) => {
+    res.header("Access-Control-Allow-Origin", "*");
+    res.header("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+    res.header("Access-Control-Allow-Headers", "Content-Type");
+    if (req.method === "OPTIONS") return res.sendStatus(200);
+    next();
+});
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 function load() {
@@ -22,7 +28,6 @@ function save(list) {
 }
 
 // ── Auth API (DLL call করে) ───────────────────────────────────────────────────
-// GET /api/auth?hwid=XXXX
 app.get("/api/auth", (req, res) => {
     const hwid = (req.query.hwid || "").trim();
     if (!hwid) return res.status(400).json({ status: "error" });
@@ -31,13 +36,11 @@ app.get("/api/auth", (req, res) => {
     res.json({ status: found ? "authorized" : "unauthorized" });
 });
 
-// ── Admin API (HTML panel call করে) ──────────────────────────────────────────
-// GET /admin/list
+// ── Admin API ─────────────────────────────────────────────────────────────────
 app.get("/admin/list", (req, res) => {
     res.json({ hwids: load() });
 });
 
-// POST /admin/add
 app.post("/admin/add", (req, res) => {
     const hwid = (req.body.hwid || "").trim();
     const note = (req.body.note || "No note").trim();
@@ -50,7 +53,6 @@ app.post("/admin/add", (req, res) => {
     res.json({ success: true });
 });
 
-// POST /admin/remove
 app.post("/admin/remove", (req, res) => {
     const hwid = (req.body.hwid || "").trim();
     const list = load().filter(h => h.hwid !== hwid);
@@ -60,7 +62,5 @@ app.post("/admin/remove", (req, res) => {
 
 // ── Start ─────────────────────────────────────────────────────────────────────
 app.listen(PORT, () => {
-    console.log(`✅ Server:  http://localhost:${PORT}`);
-    console.log(`📋 Panel:   http://localhost:${PORT}/hwid-manager.html`);
-    console.log(`🔑 API:     http://localhost:${PORT}/api/auth?hwid=YOUR_HWID`);
+    console.log(`✅ Server running on port ${PORT}`);
 });
