@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🔐 HWID License Manager</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --bg-primary: #080b12;
+      --bg-secondary: #0e1520;
+      --bg-card: #141d2b;
+      --bg-card-hover: #1a2638;
+      --border-color: #253045;
+      --text-primary: #eaf0f8;
+      --text-secondary: #8da0bb;
+      --text-muted: #5a6f8a;
+      --accent-cyan: #22d3ee;
+      --accent-purple: #a78bfa;
+      --accent-green: #34d399;
+      --accent-red: #f87171;
+      --accent-amber: #fbbf24;
+      --shadow: 0 8px 32px rgba(0,0,0,0.5);
+      --radius: 16px;
+      --transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      min-height: 100vh;
+      background-image:
+        radial-gradient(ellipse at 10% 20%, rgba(34,211,238,0.03) 0%, transparent 50%),
+        radial-gradient(ellipse at 90% 80%, rgba(167,139,250,0.03) 0%, transparent 50%);
+    }
+
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: var(--bg-secondary); }
+    ::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 10px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--accent-cyan); }
+
+    /* ── LOGIN ─────────────────────────────────────────────────────────────── */
+    #loginPage {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    .login-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius);
+      padding: 40px 36px;
+      width: 100%;
+      max-width: 400px;
+      box-shadow: var(--shadow);
+      animation: fadeIn 0.4s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(16px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .login-logo { text-align: center; margin-bottom: 32px; }
+    .login-logo .icon-wrap {
+      width: 56px; height: 56px;
+      background: linear-gradient(135deg, var(--accent-cyan), var(--accent-purple));
+      border-radius: 16px;
+      display: inline-flex; align-items: center; justify-content: center;
+      font-size: 24px; color: #080b12; margin-bottom: 14px;
+    }
+    .login-logo h1 { font-size: 1.3rem; font-weight: 700; letter-spacing: -0.5px; }
+    .login-logo h1 span { color: var(--accent-cyan); }
+    .login-logo p { font-size: 0.78rem; color: var(--text-muted); margin-top: 4px; }
+
+    .form-group { margin-bottom: 16px; }
+    .form-group label {
+      display: block; font-size: 0.72rem; font-weight: 600;
+      color: var(--text-secondary); margin-bottom: 6px; letter-spacing: 0.3px;
+    }
+    .input-wrap { position: relative; }
+    .input-wrap i {
+      position: absolute; left: 12px; top: 50%;
+      transform: translateY(-50%); color: var(--text-muted); font-size: 0.8rem;
+    }
+    .input-wrap input {
+      width: 100%; padding: 11px 14px 11px 36px;
+      background: var(--bg-primary);
+      border: 1px solid var(--border-color);
+      border-radius: 10px; color: var(--text-primary);
+      font-size: 0.88rem; font-family: 'Segoe UI', sans-serif;
+      transition: var(--transition);
+    }
+    .input-wrap input:focus {
+      outline: none; border-color: var(--accent-cyan);
+      box-shadow: 0 0 0 3px rgba(34,211,238,0.1);
+    }
+    .input-wrap input::placeholder { color: var(--text-muted); }
+
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center;
+      gap: 8px; padding: 12px 22px; border: none; border-radius: 10px;
+      font-weight: 700; font-size: 0.88rem; cursor: pointer;
+      transition: var(--transition); width: 100%;
+    }
+    .btn:active { transform: scale(0.97); }
+    .btn-primary {
+      background: linear-gradient(135deg, var(--accent-cyan), var(--accent-purple));
+      color: #080b12;
+    }
+    .btn-primary:hover { opacity: 0.9; box-shadow: 0 4px 20px rgba(34,211,238,0.3); }
+
+    .login-error {
+      background: rgba(248,113,113,0.1); border: 1px solid rgba(248,113,113,0.2);
+      color: var(--accent-red); padding: 10px 14px; border-radius: 10px;
+      font-size: 0.78rem; margin-bottom: 16px; display: none;
+    }
+    .login-error.show { display: block; }
+    .login-footer { text-align: center; margin-top: 20px; font-size: 0.7rem; color: var(--text-muted); }
+
+    /* ── ADMIN PANEL ────────────────────────────────────────────────────────── */
+    #adminPage { display: none; padding: 20px; }
+    .container { max-width: 1300px; margin: 0 auto; }
+
+    .topbar {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 16px 24px; background: var(--bg-secondary);
+      border: 1px solid var(--border-color); border-radius: var(--radius);
+      margin-bottom: 24px; flex-wrap: wrap; gap: 12px;
+    }
+    .topbar-left { display: flex; align-items: center; gap: 14px; }
+    .topbar-left .logo {
+      width: 42px; height: 42px;
+      background: linear-gradient(135deg, var(--accent-cyan), var(--accent-purple));
+      border-radius: 12px; display: flex; align-items: center; justify-content: center;
+      font-size: 20px; color: #080b12;
+    }
+    .topbar-left h1 { font-size: 1.2rem; font-weight: 700; letter-spacing: -0.5px; }
+    .topbar-left h1 span { color: var(--accent-cyan); }
+    .topbar-right { display: flex; align-items: center; gap: 12px; }
+
+    .status-badge {
+      display: flex; align-items: center; gap: 8px; padding: 6px 16px;
+      background: var(--bg-card); border: 1px solid var(--border-color);
+      border-radius: 40px; font-size: 0.75rem; font-weight: 500;
+    }
+    .status-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; animation: pulse 2s infinite; }
+    .status-dot.online  { background: var(--accent-green); }
+    .status-dot.offline { background: var(--accent-red); animation: none; }
+
+    @keyframes pulse {
+      0%,100% { opacity:1; transform:scale(1); }
+      50%      { opacity:0.5; transform:scale(0.8); }
+    }
+
+    .badge-admin {
+      padding: 4px 12px;
+      background: rgba(167,139,250,0.15); border: 1px solid rgba(167,139,250,0.2);
+      border-radius: 40px; font-size: 0.65rem; color: var(--accent-purple);
+      font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;
+    }
+
+    .btn-logout {
+      width: auto; padding: 7px 16px; font-size: 0.75rem;
+      background: rgba(248,113,113,0.08); border: 1px solid rgba(248,113,113,0.15);
+      color: var(--accent-red); border-radius: 8px; cursor: pointer;
+      transition: var(--transition); display: inline-flex; align-items: center; gap: 6px;
+    }
+    .btn-logout:hover { background: rgba(248,113,113,0.15); }
+
+    .stats-row {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(130px,1fr));
+      gap: 14px; margin-bottom: 24px;
+    }
+    .stat-card {
+      background: var(--bg-card); border: 1px solid var(--border-color);
+      border-radius: var(--radius); padding: 18px 20px; transition: var(--transition);
+    }
+    .stat-card:hover { border-color: var(--accent-cyan); transform: translateY(-2px); box-shadow: var(--shadow); }
+    .stat-card .label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-secondary); margin-bottom: 6px; }
+    .stat-card .value { font-size: 1.8rem; font-weight: 700; }
+    .stat-card .value.cyan   { color: var(--accent-cyan); }
+    .stat-card .value.green  { color: var(--accent-green); }
+
+    .main-grid { display: grid; grid-template-columns: 340px 1fr; gap: 24px; }
+    @media (max-width: 900px) { .main-grid { grid-template-columns: 1fr; } }
+
+    .panel {
+      background: var(--bg-card); border: 1px solid var(--border-color);
+      border-radius: var(--radius); padding: 24px; transition: var(--transition);
+    }
+    .panel:hover { border-color: rgba(34,211,238,0.2); }
+    .panel-title {
+      font-size: 0.85rem; font-weight: 700; margin-bottom: 18px;
+      display: flex; align-items: center; gap: 10px;
+    }
+    .panel-title i { color: var(--accent-cyan); }
+    .panel-title .count { font-weight: 400; color: var(--text-secondary); font-size: 0.7rem; margin-left: auto; }
+
+    .panel .form-group { margin-bottom: 14px; }
+    .panel .form-group label {
+      display: block; font-size: 0.72rem; font-weight: 600;
+      color: var(--text-secondary); margin-bottom: 5px;
+    }
+    .panel .form-group input {
+      width: 100%; padding: 10px 14px;
+      background: var(--bg-primary); border: 1px solid var(--border-color);
+      border-radius: 10px; color: var(--text-primary);
+      font-size: 0.85rem; font-family: 'Segoe UI', sans-serif; transition: var(--transition);
+    }
+    .panel .form-group input:focus {
+      outline: none; border-color: var(--accent-cyan);
+      box-shadow: 0 0 0 3px rgba(34,211,238,0.1);
+    }
+    .panel .form-group input::placeholder { color: var(--text-muted); }
+
+    .btn-remove {
+      padding: 5px 12px; background: rgba(248,113,113,0.08);
+      border: 1px solid rgba(248,113,113,0.15); border-radius: 6px;
+      color: var(--accent-red); font-size: 0.65rem; font-weight: 600;
+      cursor: pointer; transition: var(--transition);
+    }
+    .btn-remove:hover { background: rgba(248,113,113,0.2); }
+
+    .msg {
+      padding: 10px 14px; border-radius: 10px; font-size: 0.78rem;
+      margin-top: 12px; display: none; line-height: 1.5;
+    }
+    .msg.show { display: block; }
+    .msg.success { background: rgba(52,211,153,0.1); color: var(--accent-green); border: 1px solid rgba(52,211,153,0.15); }
+    .msg.error   { background: rgba(248,113,113,0.1); color: var(--accent-red);   border: 1px solid rgba(248,113,113,0.15); }
+
+    .search-row { display: flex; gap: 10px; margin-bottom: 16px; }
+    .search-row input {
+      flex: 1; padding: 9px 14px; background: var(--bg-primary);
+      border: 1px solid var(--border-color); border-radius: 10px;
+      color: var(--text-primary); font-size: 0.8rem;
+    }
+    .search-row input:focus { outline: none; border-color: var(--accent-cyan); }
+    .search-row input::placeholder { color: var(--text-muted); }
+
+    .btn-icon {
+      width: auto; padding: 8px 14px; font-size: 0.75rem;
+      background: var(--bg-primary); border: 1px solid var(--border-color);
+      color: var(--text-secondary); border-radius: 8px; cursor: pointer; transition: var(--transition);
+    }
+    .btn-icon:hover { border-color: var(--accent-cyan); color: var(--text-primary); }
+
+    .table-wrap { overflow-x: auto; margin-top: 4px; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.75rem; }
+    thead th {
+      text-align: left; padding: 10px 10px 10px 0;
+      color: var(--text-secondary); font-weight: 600; font-size: 0.6rem;
+      text-transform: uppercase; letter-spacing: 0.5px;
+      border-bottom: 1px solid var(--border-color);
+    }
+    tbody td { padding: 10px 10px 10px 0; border-bottom: 1px solid rgba(37,48,69,0.4); vertical-align: middle; }
+    tbody tr:last-child td { border-bottom: none; }
+    tbody tr:hover { background: rgba(34,211,238,0.02); }
+
+    .hwid-code {
+      font-family: 'Consolas','SF Mono',monospace; font-size: 0.6rem;
+      color: var(--text-secondary); word-break: break-all;
+    }
+    .note-text { color: var(--text-secondary); font-size: 0.7rem; }
+
+    .empty-state { text-align: center; padding: 40px 20px; color: var(--text-muted); }
+    .empty-state i { font-size: 2rem; margin-bottom: 12px; opacity: 0.3; }
+    .empty-state p { font-size: 0.85rem; }
+
+    @media (max-width: 600px) {
+      .topbar { flex-direction: column; align-items: stretch; }
+      .stats-row { grid-template-columns: 1fr 1fr; }
+      .panel { padding: 16px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════
+     LOGIN PAGE
+══════════════════════════════════════════ -->
+<div id="loginPage">
+  <div class="login-card">
+    <div class="login-logo">
+      <div class="icon-wrap"><i class="fas fa-shield-halved"></i></div>
+      <h1>HWID<span>Manager</span></h1>
+      <p>Sign in to access the admin panel</p>
+    </div>
+
+    <div class="login-error" id="loginError">
+      <i class="fas fa-exclamation-circle"></i> Wrong username or password!
+    </div>
+
+    <div class="form-group">
+      <label>Username</label>
+      <div class="input-wrap">
+        <i class="fas fa-user"></i>
+        <input type="text" id="loginUser" placeholder="Enter username" autocomplete="off">
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label>Password</label>
+      <div class="input-wrap">
+        <i class="fas fa-lock"></i>
+        <input type="password" id="loginPass" placeholder="Enter password">
+      </div>
+    </div>
+
+    <button class="btn btn-primary" onclick="doLogin()">
+      <i class="fas fa-sign-in-alt"></i> Login
+    </button>
+
+    <div class="login-footer">🔐 MAF SYSTEM &nbsp;·&nbsp; Admin Access Only</div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     ADMIN PANEL
+══════════════════════════════════════════ -->
+<div id="adminPage">
+<div class="container">
+
+  <header class="topbar">
+    <div class="topbar-left">
+      <div class="logo"><i class="fas fa-shield-halved"></i></div>
+      <h1>HWID<span>Manager</span></h1>
+      <span class="badge-admin"><i class="fas fa-crown"></i> Admin Panel</span>
+    </div>
+    <div class="topbar-right">
+      <div class="status-badge">
+        <span class="status-dot online" id="statusDot"></span>
+        <span id="statusText">Connected</span>
+      </div>
+      <button class="btn-logout" onclick="doLogout()">
+        <i class="fas fa-sign-out-alt"></i> Logout
+      </button>
+    </div>
+  </header>
+
+  <div class="stats-row">
+    <div class="stat-card">
+      <div class="label"><i class="fas fa-fingerprint"></i> Total HWIDs</div>
+      <div class="value cyan" id="statTotal">0</div>
+    </div>
+    <div class="stat-card">
+      <div class="label"><i class="fas fa-check-circle"></i> Authorized</div>
+      <div class="value green" id="statActive">0</div>
+    </div>
+  </div>
+
+  <div class="main-grid">
+
+    <!-- LEFT: Add HWID -->
+    <div class="panel">
+      <div class="panel-title">
+        <i class="fas fa-plus-circle"></i> Add HWID
+        <span class="count">authorize a device</span>
+      </div>
+
+      <div class="form-group">
+        <label><i class="fas fa-fingerprint"></i> HWID</label>
+        <input type="text" id="hwidInput" placeholder="Paste HWID here...">
+      </div>
+
+      <div class="form-group">
+        <label><i class="fas fa-tag"></i> Note (optional)</label>
+        <input type="text" id="noteInput" placeholder="e.g. John's PC">
+      </div>
+
+      <button class="btn btn-primary" onclick="addHWID()">
+        <i class="fas fa-save"></i> Authorize HWID
+      </button>
+
+      <div class="msg" id="addMsg"></div>
+    </div>
+
+    <!-- RIGHT: HWID List -->
+    <div class="panel">
+      <div class="panel-title">
+        <i class="fas fa-list"></i> Authorized HWIDs
+        <span class="count" id="hwidCount">(0)</span>
+      </div>
+
+      <div class="search-row">
+        <input type="text" id="searchInput" placeholder="🔍 Search HWID or note..." oninput="renderTable()">
+        <button class="btn-icon" onclick="loadHWIDs()"><i class="fas fa-sync-alt"></i></button>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>HWID</th>
+              <th>Note</th>
+              <th style="text-align:right;">Action</th>
+            </tr>
+          </thead>
+          <tbody id="tableBody"></tbody>
+        </table>
+      </div>
+
+      <div class="empty-state" id="emptyState">
+        <i class="fas fa-fingerprint"></i>
+        <p>No HWIDs authorized yet.<br>Add one from the left panel.</p>
+      </div>
+    </div>
+
+  </div>
+</div>
+</div>
+
+<script>
+// ══════════════════════════════════════════════════════════════
+//  ✅ CONFIG — এখানে পরিবর্তন করো
+// ══════════════════════════════════════════════════════════════
+const ADMIN_USERNAME = "admin";       // Login username
+const ADMIN_PASSWORD = "rehan1234";   // Login password
+const API_BASE       = "";            // Server same origin হলে খালি রাখো
+                                      // অন্য server হলে: "https://bios.falconx64.store"
+
+// ══════════════════════════════════════════════════════════════
+//  LOGIN / LOGOUT
+// ══════════════════════════════════════════════════════════════
+function doLogin() {
+  const u = document.getElementById('loginUser').value.trim();
+  const p = document.getElementById('loginPass').value.trim();
+  const err = document.getElementById('loginError');
+
+  if (u === ADMIN_USERNAME && p === ADMIN_PASSWORD) {
+    err.classList.remove('show');
+    document.getElementById('loginPage').style.display = 'none';
+    document.getElementById('adminPage').style.display = 'block';
+    loadHWIDs();
+  } else {
+    err.classList.add('show');
+    document.getElementById('loginPass').value = '';
+  }
+}
+
+function doLogout() {
+  document.getElementById('adminPage').style.display = 'none';
+  document.getElementById('loginPage').style.display = 'flex';
+  document.getElementById('loginUser').value = '';
+  document.getElementById('loginPass').value = '';
+  allHWIDs = [];
+}
+
+document.addEventListener('keypress', e => {
+  if (e.key === 'Enter') {
+    if (document.getElementById('loginPage').style.display !== 'none') doLogin();
+  }
+});
+
+// ══════════════════════════════════════════════════════════════
+//  DATA
+// ══════════════════════════════════════════════════════════════
+let allHWIDs = []; // [{ hwid, note }]
+
+function setStatus(online) {
+  document.getElementById('statusDot').className = 'status-dot ' + (online ? 'online' : 'offline');
+  document.getElementById('statusText').textContent = online ? 'Connected' : 'Disconnected';
+}
+
+function showMsg(text, type) {
+  const el = document.getElementById('addMsg');
+  el.textContent = text;
+  el.className = 'msg show ' + type;
+  setTimeout(() => el.classList.remove('show'), 3000);
+}
+
+// ══════════════════════════════════════════════════════════════
+//  API CALLS — তোমার server.js এর সাথে কাজ করে
+// ══════════════════════════════════════════════════════════════
+
+async function loadHWIDs() {
+  try {
+    const res = await fetch(API_BASE + '/admin/list');
+    if (!res.ok) throw new Error('Server error');
+    const data = await res.json();
+    allHWIDs = data.hwids || [];
+    renderTable();
+    updateStats();
+    setStatus(true);
+  } catch(e) {
+    setStatus(false);
+    console.error(e);
+  }
+}
+
+async function addHWID() {
+  const hwid = document.getElementById('hwidInput').value.trim();
+  const note = document.getElementById('noteInput').value.trim() || 'No note';
+
+  if (!hwid) { showMsg('⚠️ Please enter a HWID.', 'error'); return; }
+
+  try {
+    const res = await fetch(API_BASE + '/admin/add', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ hwid, note })
+    });
+    const data = await res.json();
+    if (data.success) {
+      document.getElementById('hwidInput').value = '';
+      document.getElementById('noteInput').value = '';
+      showMsg('✅ HWID authorized successfully!', 'success');
+      loadHWIDs();
+    } else {
+      showMsg('❌ ' + (data.message || 'Failed'), 'error');
+    }
+  } catch(e) {
+    showMsg('❌ Server error', 'error');
+  }
+}
+
+async function removeHWID(hwid) {
+  if (!confirm('Remove this HWID?\n\n' + hwid)) return;
+  try {
+    const res = await fetch(API_BASE + '/admin/remove', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ hwid })
+    });
+    const data = await res.json();
+    if (data.success) loadHWIDs();
+    else alert('Error: ' + data.message);
+  } catch(e) {
+    alert('Server error');
+  }
+}
+
+// ══════════════════════════════════════════════════════════════
+//  RENDER
+// ══════════════════════════════════════════════════════════════
+function renderTable() {
+  const q = document.getElementById('searchInput').value.trim().toLowerCase();
+  const tbody = document.getElementById('tableBody');
+  const emptyState = document.getElementById('emptyState');
+
+  let filtered = allHWIDs;
+  if (q) filtered = allHWIDs.filter(h =>
+    h.hwid.toLowerCase().includes(q) ||
+    (h.note && h.note.toLowerCase().includes(q))
+  );
+
+  document.getElementById('hwidCount').textContent = '(' + allHWIDs.length + ')';
+
+  if (!filtered.length) {
+    tbody.innerHTML = '';
+    emptyState.style.display = 'block';
+    return;
+  }
+
+  emptyState.style.display = 'none';
+  tbody.innerHTML = '';
+
+  filtered.forEach((item, i) => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td style="color:var(--text-muted)">${i + 1}</td>
+      <td><span class="hwid-code">${item.hwid}</span></td>
+      <td><span class="note-text">${item.note || ''}</span></td>
+      <td style="text-align:right;">
+        <button class="btn-remove" onclick="removeHWID('${item.hwid}')">
+          <i class="fas fa-trash"></i>
+        </button>
+      </td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+function updateStats() {
+  document.getElementById('statTotal').textContent  = allHWIDs.length;
+  document.getElementById('statActive').textContent = allHWIDs.length;
+}
+</script>
+
+</body>
+</html>
